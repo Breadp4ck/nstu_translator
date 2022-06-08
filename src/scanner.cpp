@@ -1,12 +1,12 @@
-#include <typeinfo>
-#include <iostream>
-#include <string>
-
 #include "scanner.hpp"
 
 // -----------------------------------------------------------
 // SCANNER
 // -----------------------------------------------------------
+
+Scanner::Scanner(Tables tables) {
+    tables_ = tables;
+}
 
 void Scanner::scan(std::string code) {
     transitionTo(new ScannerStateStart());
@@ -15,6 +15,7 @@ void Scanner::scan(std::string code) {
         state_->update(*this, lexeme);
 
         if (lexeme == '\n') {
+            tokenLineIndeces.push_back(tokens.size());
             currentLine++;
         }
     }
@@ -47,31 +48,92 @@ int Scanner::getLine() {
     return currentLine;
 }
 
+std::vector<size_t> Scanner::getTokenLineIndeces() {
+    return tokenLineIndeces;
+}
+
 void Scanner::clearBuffer() {
     buf.clear();
 }
 
 void Scanner::generateToken(TokenType type) {
     auto tokenStr = getBufferAsString();
-    std::cout << tokenStr << std::endl;
 
     switch (type) {
         case TokenOperation:
+            if (tables_.operations->Contains(tokenStr)) {
+                Token token = { TABLE_OPERATIONS, tables_.operations->GetID(tokenStr) };
+                tokens.push_back(token);
+
+            } else {
+                pushError("Задана неправильная операция.");
+            }
             break;
 
         case TokenSeparator:
+            if (tables_.separators->Contains(tokenStr)) {
+                Token token = { TABLE_SEPARATORS, tables_.separators->GetID(tokenStr) };
+                tokens.push_back(token);
+
+            } else {
+                pushError("Задан неправильный разделитель.");
+            }
             break;
 
         case TokenWord:
+            if (tables_.types->Contains(tokenStr)) {
+                Token token = { TABLE_TYPES, tables_.types->GetID(tokenStr) };
+                tokens.push_back(token);
+
+            } else if (tables_.specials->Contains(tokenStr)) {
+                Token token = { TABLE_SPECIALS, tables_.specials->GetID(tokenStr) };
+                tokens.push_back(token);
+
+            } else {
+                tables_.variables->Update(tokenStr, Variable(tokenStr));
+                Token token = { TABLE_VARIABLES, tables_.variables->getHash(tokenStr) };
+                tokens.push_back(token);
+            }
             break;
 
         case TokenConstant:
+            int valueInt;
+            float valueFloat;
+
+            if (Int::TryParse(tokenStr, &valueInt)) {
+                tables_.constants->Update(tokenStr, Int(valueInt));
+                Token token = { TABLE_CONSTANTS, tables_.constants->getHash(tokenStr) };
+                tokens.push_back(token);
+
+            } else if (Float::TryParse(tokenStr, &valueFloat)) {
+                tables_.constants->Update(tokenStr, Int(valueFloat));
+                Token token = { TABLE_CONSTANTS, tables_.constants->getHash(tokenStr) };
+                tokens.push_back(token);
+
+            } else {
+                pushError("Задана неправильная числовая константа.");
+            }
+
             break;
 
         case TokenConstantChar:
+            char value;
+
+            if (Char::TryParse(tokenStr, &value)) {
+                tables_.constants->Update(tokenStr, Char(value));
+                Token token = { TABLE_CONSTANTS, tables_.constants->getHash(tokenStr) };
+                tokens.push_back(token);
+
+            } else {
+                pushError("Задана неправильная символьная константа.");
+            }
             break;
 
         case TokenBracket:
+            if (tables_.brackets->Contains(tokenStr)) {
+                Token token = { TABLE_BRACKETS, tables_.brackets->GetID(tokenStr) };
+                tokens.push_back(token);
+            }
             break;
 
         case TokenError:
@@ -88,6 +150,10 @@ std::string Scanner::getBufferAsString() {
 
 std::vector<ScannerError> Scanner::getErrors() {
     return errors;
+}
+
+std::vector<Token> Scanner::getTokens() {
+    return tokens;
 }
 
 
@@ -194,7 +260,7 @@ void ScannerStateNumber::update(Scanner& scanner, char lexeme) {
         scanner.transitionTo(new ScannerStateStart());
 
     } else if (lexeme == '{' || lexeme == '}' || lexeme == '(' || lexeme == ')') {
-        scanner.generateToken(TokenWord);
+        scanner.generateToken(TokenConstant);
         scanner.pushToBuffer(lexeme);
         scanner.generateToken(TokenBracket);
         scanner.transitionTo(new ScannerStateStart());

@@ -1,0 +1,65 @@
+Типы
+------------------------------------------------
+TYPE -> int
+TYPE -> char
+TYPE -> float
+MAIN_RETURN_TYPE -> void
+MAIN_RETURN_TYPE -> int
+
+
+Операции
+------------------------------------------------
+OPERATION -> +
+OPERATION -> -
+OPERATION -> *
+OPERATION -> /
+OPERATION -> ==
+OPERATION -> !=
+OPERATION -> >
+OPERATION -> <
+
+
+Начало
+------------------------------------------------
+S -> PROGRAM
+
+
+Программа
+------------------------------------------------
+PROGRAM -> MAIN_RETURN_TYPE main () { BODY }
+PROGRAM -> eps
+
+
+Тело программы
+------------------------------------------------
+BODY -> DECLARATION BODY
+BODY -> ASSIGN BODY
+BODY -> eps
+
+
+Объявление
+------------------------------------------------
+DECALRATION         -> TYPE DECLARATIONS;
+DECALRATIONS        -> var VALUE NEXT_DECLARATION
+VALUE               -> = EXPR
+VALUE               -> eps
+NEXT_DECLARATION    -> , DECALARATIONS
+NEXT_DECLARATION    -> eps
+
+
+Присваивание
+------------------------------------------------
+ASSIGN              -> ASSIGNS;
+ASSIGNS             -> var = EXPR NEXT_ASSIGN
+NEXT_ASSIGN         -> , ASSIGNS
+NEXT_ASSIGN         -> eps
+
+
+Выражение
+------------------------------------------------
+EXPR                -> -EXPR1
+EXPR                -> EXPR1
+EXPR1               -> EXPR_VALUE EXPR2
+EXPR1               -> (EXPR) EXPR2
+EXPR2               -> eps
+EXPR2               -> OPERATION EXPR1

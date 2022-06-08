@@ -1,21 +1,16 @@
+#pragma once
+
 #include <vector>
 #include <string>
+#include <iostream>
+
+#include "table.hpp"
+#include "types.hpp"
+#include "token.hpp"
 
 struct ScannerError {
     std::string msg;
     int line;
-};
-
-struct Token { };
-
-enum TokenType {
-    TokenOperation,
-    TokenSeparator,
-    TokenWord,
-    TokenConstant,
-    TokenConstantChar,
-    TokenBracket,
-    TokenError,
 };
 
 class Scanner;
@@ -28,7 +23,7 @@ public:
 
 class Scanner {
 public:
-    Scanner() { };
+    Scanner(Tables tables);
     void scan(std::string filename);
     void transitionTo(ScannerState *newState);
     void pushToBuffer(char lexeme);
@@ -38,16 +33,21 @@ public:
     void generateToken(TokenType type);
     std::string getBufferAsString();
     std::vector<ScannerError> getErrors();
+    std::vector<Token> getTokens();
+    std::vector<size_t> getTokenLineIndeces();
 
-    bool multilineComment;
-    bool charContent;
+    bool multilineComment = false;
+    bool charContent = false;
 
 private:
     int currentLine = 1;
+    int currentTokenID = 0;
     ScannerState *state_;
+    Tables tables_;
     std::vector<char> buf;
     std::vector<Token> tokens;
     std::vector<ScannerError> errors;
+    std::vector<size_t> tokenLineIndeces;
 };
 
 class ScannerStateStart : public ScannerState {
