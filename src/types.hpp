@@ -14,9 +14,11 @@ enum TypesID {
 class Type {
 protected:
     std::string name;
+    TypesID typeID;
 
 public:
     std::string getStr() { return name; }
+    size_t type() { return typeID; }
 };
 
 class Int : public Type {
@@ -111,6 +113,6 @@ class Float : public Type {
 
 class Null : public Type {
     public:
-        Null() { }
+        Null() { this->typeID = TYPE_NULL; }
         std::string getStr() { return "Null"; }
 };

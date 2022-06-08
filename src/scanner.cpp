@@ -106,7 +106,7 @@ void Scanner::generateToken(TokenType type) {
                 tokens.push_back(token);
 
             } else if (Float::TryParse(tokenStr, &valueFloat)) {
-                tables_.constants->Update(tokenStr, Int(valueFloat));
+                tables_.constants->Update(tokenStr, Float(valueFloat));
                 Token token = { TABLE_CONSTANTS, tables_.constants->getHash(tokenStr) };
                 tokens.push_back(token);
 

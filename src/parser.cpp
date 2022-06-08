@@ -276,20 +276,23 @@ void Parser::parse(std::vector<Token> tokens) {
                 return;
             }
 
+            Type constant;
+            Variable var("\0");
+
             if (row.accept_) {
-                // TODO This is the place where I can build my Polish notation
-
-                // everywhere here in the if statement
-                // everywhere here in the if statement
-                // everywhere here in the if statement
-
                 // Check existance of variable or constant in table
                 switch (token.tableID) {
                     case TABLE_CONSTANTS:
+                        constant = tables.constants->ByHash(token.rowID);
+
+                        if (constant.type() == TYPE_FLOAT) {
+                            rExpr = NUMBER_FLOAT;
+                        }
+
                         break;
 
                     case TABLE_VARIABLES:
-                        auto var = tables.variables->ByHash(token.rowID);
+                        var = tables.variables->ByHash(token.rowID);
 
                         if (var.type() == TYPE_NULL) {
                             if (tempCurrentRow == 30) {
@@ -307,8 +310,31 @@ void Parser::parse(std::vector<Token> tokens) {
                                 ParserError err = { "Переопределённая переменная", (int) currentLine };
                                 addError(err);
                                 return;
+
                             }
                         }
+
+                        if (var.type() == TYPE_FLOAT) {
+                            if (tempCurrentRow == 30 || tempCurrentRow == 47) {
+                                lExpr = NUMBER_FLOAT;
+
+                            } else {
+                                rExpr = NUMBER_FLOAT;
+                            }
+                        }
+
+                        break;
+
+                    case TABLE_SEPARATORS:
+                        if (lExpr == NUMBER_INTEGER && rExpr == NUMBER_FLOAT) {
+                            ParserError err = { "Невозможно приравнять вещественное число к целому", (int) currentLine };
+                            addError(err);
+                            return;
+                        }
+
+                        lExpr = NUMBER_INTEGER;
+                        rExpr = NUMBER_INTEGER;
+
                         break;
                 }
 
