@@ -1,6 +1,8 @@
 #include "table.hpp"
 #include "types.hpp"
 #include "variable.hpp"
+#include <vector>
+#include <iostream>
 
 // -----------------------------------------------------------
 // STATIC TABLE
@@ -92,6 +94,8 @@ void DynamicTable<TKey, TValue>::Update(TKey key, TValue value) {
         cell.emplace_back(key, value);
         this->size += 1;
 
+        keys.push_back(key);
+
     // Key exists
     } else {
         for (auto pair = begin(cell); pair != end(cell); pair++) {
@@ -162,6 +166,12 @@ size_t DynamicTable<TKey, TValue>::getHash(TKey key) {
     return std::hash<TKey>()(key) % capacity;
 }
 
+template<typename TKey, typename TValue>
+std::vector<TKey> DynamicTable<TKey, TValue>::getKeys() {
+    return keys;
+}
+
 template class StaticTable<std::string>;
 template class DynamicTable<std::string, Type>;
 template class DynamicTable<std::string, Variable>;
+template class DynamicTable<size_t, Variable>;

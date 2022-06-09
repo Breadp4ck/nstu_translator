@@ -19,6 +19,7 @@ protected:
 public:
     std::string getStr() { return name; }
     size_t type() { return typeID; }
+        auto getValue() { return 0; }
 };
 
 class Int : public Type {
@@ -29,6 +30,9 @@ class Int : public Type {
         Int();
         Int(int value);
         std::string getStr();
+
+        auto getValue() { return value; }
+
         static bool TryParse(std::string str, int *variable) {
             // TODO Работает только с обычными десятичными числами
             for (auto item : str) {
@@ -50,6 +54,8 @@ class Char : public Type {
         Char();
         Char(char value);
         std::string getStr();
+
+        auto getValue() { return value; }
 
         static bool TryParse(std::string str, char *variable) {
             switch (str.length()) {
@@ -97,6 +103,8 @@ class Float : public Type {
         Float();
         Float(float value);
         std::string getStr();
+
+        auto getValue() { return value; }
 
         static bool TryParse(std::string str, float *variable) {
             // TODO Работает только с представлением с точкой

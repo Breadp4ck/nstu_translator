@@ -306,7 +306,7 @@ void ScannerStateFloatNumber::update(Scanner& scanner, char lexeme) {
         scanner.transitionTo(new ScannerStateStart());
 
     } else if (lexeme == '{' || lexeme == '}' || lexeme == '(' || lexeme == ')') {
-        scanner.generateToken(TokenWord);
+        scanner.generateToken(TokenConstant);
         scanner.pushToBuffer(lexeme);
         scanner.generateToken(TokenBracket);
         scanner.transitionTo(new ScannerStateStart());

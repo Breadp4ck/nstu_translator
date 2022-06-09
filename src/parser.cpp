@@ -3,6 +3,7 @@
 #include "token.hpp"
 #include "types.hpp"
 #include <cstdlib>
+#include <vector>
 
 // РГЗ
 // Методы диагностики и исправления ошибок.
@@ -169,7 +170,6 @@ std::string Parser::getNiceTokenStr(Token token) {
     }
 
     return tokenStr;
-
 }
 
 bool Parser::containsTerminal(std::vector<std::string> terminals, std::string terminal) {
@@ -182,9 +182,12 @@ bool Parser::containsTerminal(std::vector<std::string> terminals, std::string te
     return false;
 }
 
+std::vector<Token> Parser::getPolish() {
+    return polish;
+}
+
 void Parser::parse(std::vector<Token> tokens) {
     std::stack<size_t> st;
-    std::vector<Token> output;
     std::stack<Token> outputBuf;
     size_t currentRow = 1;
     size_t currentTokenNumber = 0;
@@ -240,7 +243,9 @@ void Parser::parse(std::vector<Token> tokens) {
                 currentRow += 1;
 
             } else {
-                ParserError err = { "Неизвестная ошибка", (int) currentLine }; // TODO to int? really?
+                std::string msg = "Неизвестная ошибка: ";
+                msg += std::to_string(currentRow);
+                ParserError err = { msg, (int) currentLine }; // TODO to int? really?
 
                 switch (currentRow) {
                     case 22:
@@ -336,6 +341,16 @@ void Parser::parse(std::vector<Token> tokens) {
                         rExpr = NUMBER_INTEGER;
 
                         break;
+                    
+                    case TABLE_OPERATIONS:
+                        if (tempCurrentRow == 58) {
+                            tables.constants->Update("0", Char(0));
+                            Token zero = { TABLE_CONSTANTS, tables.constants->getHash("0") };
+
+                            polish.push_back(zero); // Yes
+
+                        }
+                        break;
                 }
 
                 // -------------------------------------------------------------
@@ -350,16 +365,16 @@ void Parser::parse(std::vector<Token> tokens) {
                     switch (token.tableID) {
                         case TABLE_CONSTANTS:
                         case TABLE_VARIABLES:
-                            output.push_back(token);
+                            polish.push_back(token);
                             break;
 
                         case TABLE_SEPARATORS:
                             while (outputBuf.top().tableID != 100) {
-                                output.push_back(outputBuf.top());
+                                polish.push_back(outputBuf.top());
                                 outputBuf.pop();
                             }
 
-                            output.push_back(token);
+                            polish.push_back(token);
                             break;
 
                         case TABLE_BRACKETS:
@@ -368,7 +383,7 @@ void Parser::parse(std::vector<Token> tokens) {
 
                             } else if (token.rowID == 1) {
                                 while ( ! (outputBuf.top().tableID == TABLE_BRACKETS && outputBuf.top().rowID == 0)) {
-                                    output.push_back(outputBuf.top());
+                                    polish.push_back(outputBuf.top());
                                     outputBuf.pop();
                                 }
 
@@ -388,7 +403,7 @@ void Parser::parse(std::vector<Token> tokens) {
                                     outputBuf.push(token);
 
                                 } else {
-                                    output.push_back(last);
+                                    polish.push_back(last);
                                     outputBuf.pop();
 
                                     outputBuf.push(token);
@@ -411,77 +426,15 @@ void Parser::parse(std::vector<Token> tokens) {
         //std::cout << ">|\t" << tokenStr << std::endl;
     }
 
-    if (st.empty()) {
-        std::cout << "Всё круто" << std::endl;
-
-    } else {
+    if (!st.empty()) {
         ParserError err = { "Стек парсера не пустой. Возможно, вы забыли '}'?", (int) currentLine };
         addError(err);
         return;
     }
 
-    // -----------------------------------------------------------
-    // Кривой перевод в Речь Посполитую
-    // -----------------------------------------------------------
-    
-    //std::stack<Token> mem;
-    //std::stack<Token> res;
-
-    //for (auto item : output) {
-    //    switch (item.tableID) {
-    //        case TABLE_BRACKETS:
-    //            if (item.rowID == 0) {
-    //                mem.push(item);
-
-    //            } else {
-    //                Token kek;
-    //                do {
-    //                    kek = mem.top();
-    //                    res.push(kek);
-    //                    mem.pop();
-    //                } while (kek.tableID != TABLE_BRACKETS && kek.rowID != 1);
-    //                res.pop();
-    //            }
-    //            break;
-
-    //        case TABLE_SEPARATORS:
-    //            Token kek;
-    //            do {
-    //                kek = mem.top();
-    //                res.push(kek);
-    //                mem.pop();
-    //            } while (!mem.empty());
-    //            res.push(item);
-    //            break;
-
-    //        case TABLE_VARIABLES:
-    //        case TABLE_CONSTANTS:
-    //            res.push(item);
-    //            break;
-
-    //        case TABLE_OPERATIONS:
-    //            mem.push(item);
-    //            break;
-
-    //        default:
-    //            break;
-    //    }
-    //}
-
-    //while (!res.empty()) {
-    //    mem.push(res.top());
-    //    res.pop();
-    //}
-
-    for (auto token : output) {
-        std::cout << getNiceTokenStr(token) << " ";
-    }
-
     //std::cout << std::endl;
 }
 
-// Мне нужен токен для определения переменной/константы
-// 
 void Parser::addError(ParserError error) {
     errors.push_back(error);
 }

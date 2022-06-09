@@ -45,6 +45,7 @@ template<typename TKey, typename TValue>
 class DynamicTable : Table {
     private:
         std::list<std::pair<TKey, TValue>> *pairs;
+        std::vector<TKey> keys;
         size_t capacity;
         size_t size;
 
@@ -56,6 +57,7 @@ class DynamicTable : Table {
         TValue Get(TKey key);
         TValue ByHash(size_t hash);
         size_t Length();
+        std::vector<TKey> getKeys();
         size_t getHash(TKey key);
 };
 

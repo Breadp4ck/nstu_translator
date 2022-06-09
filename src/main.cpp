@@ -6,8 +6,13 @@
 #include "table.hpp"
 #include "scanner.hpp"
 #include "parser.hpp"
+#include "code_generator.hpp"
 
 int main() {
+
+    // PREPARATIONS
+    // ------------------------------------------------------------
+
     auto types = new std::string[] {"int", "float", "char"};
     auto operations = new std::string[] { "+", "-", "*", "=", "==", "!=", "<", ">" };
     auto separators = new std::string[] {",", ";"};
@@ -44,6 +49,9 @@ int main() {
 
     file.close();
 
+    // SCANNER
+    // ------------------------------------------------------------
+
     auto scanner = Scanner(tables);
     scanner.scan(content);
 
@@ -54,25 +62,22 @@ int main() {
     for (auto &err : s_errors) {  
         std::cout << err.line << "|\t" << err.msg << '\n';
     }
-    //for (auto &token : tokens) {  
-    //    std::cout << token.tableID << " | " << token.rowID << '\n';
-
-    //    if (token.tableID == TABLE_VARIABLES) {
-    //        auto var = tables.variables->ByHash(token.rowID);
-    //        std::cout << var.name() << std::endl;
-    //    }
-    //}
 
     if (s_errors.size() > 0) {
         return 1;
     }
 
 
+
+    // PARSER
+    // ------------------------------------------------------------
+
     auto table = new ParseTable("reference/ParseTable.csv");
     auto parser = Parser(table, tables, tokenLineIndeces);
     parser.parse(tokens);
 
     auto p_errors = parser.getErrors();
+    auto polish = parser.getPolish();
 
     for (auto &err : p_errors) {  
         std::cout << err.line << "|\t" << err.msg << '\n';
@@ -81,6 +86,19 @@ int main() {
     if (p_errors.size() > 0) {
         return 1;
     }
+
+    for (auto token : polish) {
+        std::cout << parser.getNiceTokenStr(token) << " ";
+    }
+
+    std::cout << std::endl;
+
+    // CODE GENERATOR
+    // ------------------------------------------------------------
+
+    auto gen = new CodeGenerator(tables, polish);
+
+    gen->generate();
 
     return 0;
 }

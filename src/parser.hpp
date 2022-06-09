@@ -35,18 +35,21 @@ public:
 };
 
 class Parser {
+ParseTable *table;
+Tables tables;
+std::vector<ParserError> errors;
+std::vector<size_t> tokenLineIndeces;
+std::vector<Token> polish;
+
 private:
-    ParseTable *table;
-    Tables tables;
-    std::vector<ParserError> errors;
-    std::vector<size_t> tokenLineIndeces;
+    bool containsTerminal(std::vector<std::string> terminals, std::string terminal);
+    void addError(ParserError error);
 
 public:
     Parser(ParseTable *table, Tables tables, std::vector<size_t> tokenLineIndeces);
     void parse(std::vector<Token> tokens);
     std::string getTokenStr(Token);
     std::string getNiceTokenStr(Token);
-    bool containsTerminal(std::vector<std::string> terminals, std::string terminal);
-    void addError(ParserError error);
     std::vector<ParserError> getErrors();
+    std::vector<Token> getPolish();
 };
