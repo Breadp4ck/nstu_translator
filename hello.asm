@@ -10,30 +10,33 @@
 	global main
 
 main:
-	; CONST_675 + CONST_675 -> TEMP_0
-	fild dword [CONST_675]
-	fiadd dword [CONST_675]
+	; CONST_953 != CONST_51 -> TEMP_0
+	; Comparation work only whith floats!
+	fld qword [CONST_953]
+	fld qword [CONST_51]
+	fcomip
+jne lbl_0_jne_true
+	fldz
+	jmp lbl_0_jne_exit
+lbl_0_jne_true:
+	fld1
+lbl_0_jne_exit:
 	fistp dword [TEMP_0]
 
-	; CONST_953 + TEMP_0 -> TEMP_1
-	fld qword [CONST_953]
-	fiadd dword [TEMP_0]
-	fstp qword [TEMP_1]
-
-	; a = TEMP_1 -> a
-	fld qword [TEMP_1]
+	; a = TEMP_0 -> a
+	fild dword [TEMP_0]
 	fstp qword [TEMP_1]
 	fld qword [TEMP_1]
 	fstp qword [a]
 
 	; Exit program
 	mov eax, 1
-	int 0x80
+	int 80h
 
 
 [section .data]
 	a dq 0.0
 	TEMP_1 dq 0.0
 	TEMP_0 dd 0
-	CONST_675 dd 1
+	CONST_51 dq 2.000000
 	CONST_953 dq 1.000000

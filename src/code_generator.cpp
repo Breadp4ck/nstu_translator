@@ -108,11 +108,13 @@ lbl_IDX_eq_exit:
     fstp qword [r]
 */
 
+    result += "\t; Comparation work only whith floats!\n";
     result += "\tfld qword [";
     result += p1.name;
-    result += "]\n\tfcomp qword [";
+    result += "]\n\tfld qword [";
     result += p2.name;
-    result += "]\n\tfstsw ax\n\tsahw\n\t";
+    result += "]\n\tfcomip\n";
+    //result += "\tfstsw ax\n\tsahw\n\t";
 
     result += jumpCond;
     result += " ";
@@ -259,14 +261,20 @@ std::string CodeGenerator::generate(std::string filename) {
 
 
                     // Init with type
-                    if (typeP1 == TYPE_FLOAT || typeP2 == TYPE_FLOAT) {
-                        temp.init(TYPE_FLOAT);
 
-                    } else if (typeP1 == TYPE_INT || typeP2 == TYPE_INT) {
-                        temp.init(TYPE_INT);
+                    if (token.rowID < 4) {
+                        if (typeP1 == TYPE_FLOAT || typeP2 == TYPE_FLOAT) {
+                            temp.init(TYPE_FLOAT);
+
+                        } else if (typeP1 == TYPE_INT || typeP2 == TYPE_INT) {
+                            temp.init(TYPE_INT);
+
+                        } else {
+                            temp.init(TYPE_CHAR);
+                        }
 
                     } else {
-                        temp.init(TYPE_CHAR);
+                        temp.init(TYPE_INT);
                     }
 
                     tempsTable.Update(idx2, temp);
@@ -338,7 +346,7 @@ std::string CodeGenerator::generate(std::string filename) {
 
     // DATA SECTION
     // -----------------------------------------------------------
-    file << "\t; Exit program\n\tmov eax, 1\n\tint 0x80\n\n";
+    file << "\t; Exit program\n\tmov eax, 1\n\tint 80h\n\n";
 
     file << "\n[section .data]\n";
     std::stack<Token> allNames;
