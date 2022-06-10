@@ -49,6 +49,7 @@ int main() {
 
     file.close();
 
+
     // SCANNER
     // ------------------------------------------------------------
 
@@ -66,7 +67,6 @@ int main() {
     if (s_errors.size() > 0) {
         return 1;
     }
-
 
 
     // PARSER
@@ -87,18 +87,19 @@ int main() {
         return 1;
     }
 
-    for (auto token : polish) {
-        std::cout << parser.getNiceTokenStr(token) << " ";
-    }
+    //for (auto token : polish) {
+    //    std::cout << parser.getNiceTokenStr(token) << " ";
+    //}
 
-    std::cout << std::endl;
+
 
     // CODE GENERATOR
     // ------------------------------------------------------------
 
     auto gen = new CodeGenerator(tables, polish);
+    gen->generate("hello.asm");
 
-    gen->generate();
+    std::cout << "Done" << std::endl;
 
     return 0;
 }

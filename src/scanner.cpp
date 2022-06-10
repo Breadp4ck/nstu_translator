@@ -170,7 +170,7 @@ void ScannerStateStart::update(Scanner& scanner, char lexeme) {
         scanner.transitionTo(new ScannerStateNumber());
         scanner.pushToBuffer(lexeme);
 
-    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=') {
+    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=' || lexeme == '!' || lexeme == '<' || lexeme == '>') {
         scanner.transitionTo(new ScannerStateOperation());
         scanner.pushToBuffer(lexeme);
 
@@ -203,7 +203,7 @@ void ScannerStateWord::update(Scanner& scanner, char lexeme) {
         scanner.generateToken(TokenWord);
         scanner.transitionTo(new ScannerStateStart());
 
-    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=') {
+    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=' || lexeme == '!' || lexeme == '<' || lexeme == '>') {
         scanner.generateToken(TokenWord);
         scanner.pushToBuffer(lexeme);
         scanner.transitionTo(new ScannerStateOperation());
@@ -243,7 +243,7 @@ void ScannerStateNumber::update(Scanner& scanner, char lexeme) {
         scanner.generateToken(TokenConstant);
         scanner.transitionTo(new ScannerStateStart());
 
-    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=') {
+    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=' || lexeme == '!' || lexeme == '<' || lexeme == '>') {
         scanner.generateToken(TokenConstant);
         scanner.pushToBuffer(lexeme);
         scanner.transitionTo(new ScannerStateOperation());
@@ -289,7 +289,7 @@ void ScannerStateFloatNumber::update(Scanner& scanner, char lexeme) {
         scanner.generateToken(TokenConstant);
         scanner.transitionTo(new ScannerStateStart());
 
-    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=') {
+    } else if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=' || lexeme == '!' || lexeme == '<' || lexeme == '>') {
         scanner.generateToken(TokenConstant);
         scanner.pushToBuffer(lexeme);
         scanner.transitionTo(new ScannerStateOperation());
@@ -323,7 +323,7 @@ void ScannerStateFloatNumber::update(Scanner& scanner, char lexeme) {
 }
 
 void ScannerStateOperation::update(Scanner& scanner, char lexeme) {
-    if (lexeme == '+' || lexeme == '-' || lexeme == '*' || lexeme == '/' || lexeme == '=') {
+    if (lexeme == '/' || lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=' || lexeme == '!' || lexeme == '<' || lexeme == '>') {
         scanner.pushToBuffer(lexeme);
 
     } else if (isspace(lexeme)) {
@@ -359,7 +359,7 @@ void ScannerStateOperation::update(Scanner& scanner, char lexeme) {
 }
 
 void ScannerStateCommentOrOperation::update(Scanner& scanner, char lexeme) {
-    if (lexeme == '+' || lexeme == '-' || lexeme == '=') {
+    if (lexeme == '-' || lexeme == '+' || lexeme == '*' || lexeme == '=' || lexeme == '!' || lexeme == '<' || lexeme == '>') {
         scanner.pushToBuffer(lexeme);
         scanner.transitionTo(new ScannerStateOperation());
 

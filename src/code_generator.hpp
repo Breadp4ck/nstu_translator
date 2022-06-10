@@ -17,5 +17,5 @@ class CodeGenerator {
         CodeGenerator(Tables tables, std::vector<Token> polish);
         size_t getType(Token token);
         std::string getNiceName(Token token);
-        std::string generate();
+        std::string generate(std::string filename);
 };

@@ -1,6 +1,7 @@
 #include "code_generator.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include "types.hpp"
@@ -21,11 +22,11 @@ struct Number {
 std::string addParser(Number p1, Number p2, Number r) {
     std::string result = "";
 
-    result += p1.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild qword [";
+    result += p1.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild dword [";
     result += p1.name;
-    result += p2.typeID == TYPE_FLOAT ? "]\n\tfadd qword [" : "]\n\tfiadd qword [";
+    result += p2.typeID == TYPE_FLOAT ? "]\n\tfadd qword [" : "]\n\tfiadd dword [";
     result += p2.name;
-    result += r.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp qword [";
+    result += r.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp dword [";
     result += r.name;
     result += "]\n\n";
 
@@ -35,11 +36,11 @@ std::string addParser(Number p1, Number p2, Number r) {
 std::string subParser(Number p1, Number p2, Number r) {
     std::string result = "";
 
-    result += p1.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild qword [";
+    result += p1.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild dword [";
     result += p1.name;
-    result += p2.typeID == TYPE_FLOAT ? "]\n\tfsub qword [" : "]\n\tfisub qword [";
+    result += p2.typeID == TYPE_FLOAT ? "]\n\tfsub qword [" : "]\n\tfisub dword [";
     result += p2.name;
-    result += r.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp qword [";
+    result += r.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp dword [";
     result += r.name;
     result += "]\n\n";
 
@@ -49,24 +50,85 @@ std::string subParser(Number p1, Number p2, Number r) {
 std::string mulParser(Number p1, Number p2, Number r) {
     std::string result = "";
 
-    result += p1.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild qword [";
+    result += p1.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild dword [";
     result += p1.name;
-    result += p2.typeID == TYPE_FLOAT ? "]\n\tfmul qword [" : "]\n\tfimul qword [";
+    result += p2.typeID == TYPE_FLOAT ? "]\n\tfmul qword [" : "]\n\tfimul dword [";
     result += p2.name;
-    result += r.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp qword [";
+    result += r.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp dword [";
     result += r.name;
     result += "]\n\n";
 
     return result;
 }
 
-std::string setParser(Number p1, Number _p2, Number r) {
+std::string setParser(Number p1, Number p2, Number r) {
     std::string result = "";
 
-    result += r.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild qword [";
+    result += p2.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild dword [";
+    result += p2.name;
+    result += r.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp dword [";
     result += r.name;
-    result += p1.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp qword [";
+    result += "]\n";
+
+    result += r.typeID == TYPE_FLOAT ? "\tfld qword [" : "\tfild dword [";
+    result += r.name;
+    result += p1.typeID == TYPE_FLOAT ? "]\n\tfstp qword [" : "]\n\tfistp dword [";
     result += p1.name;
+    result += "]\n\n";
+
+    return result;
+}
+
+std::string compParser(Number p1, Number p2, Number r, std::string jumpCond, size_t opIdx) {
+    std::string result = "";
+
+    std::string lbl_true = "lbl_";
+    lbl_true += std::to_string(opIdx);
+    lbl_true += "_";
+    lbl_true += jumpCond;
+    lbl_true += "_true";
+
+    std::string lbl_exit = "lbl_";
+    lbl_exit += std::to_string(opIdx);
+    lbl_exit += "_";
+    lbl_exit += jumpCond;
+    lbl_exit += "_exit";
+
+/*
+    fld qword [p1]
+    fcomp qword [p2]
+    fstsw ax ; Take FPU compare flags
+    sahw
+    jXX lbl_IDX_eq_true
+    fldz
+    jmp lbl_IDX_eq_exit
+lbl_IDX_eq_true: 
+    fld1
+lbl_IDX_eq_exit:
+    fstp qword [r]
+*/
+
+    result += "\tfld qword [";
+    result += p1.name;
+    result += "]\n\tfcomp qword [";
+    result += p2.name;
+    result += "]\n\tfstsw ax\n\tsahw\n\t";
+
+    result += jumpCond;
+    result += " ";
+    result += lbl_true;
+
+    result += "\n\tfldz\n\tjmp ";
+    result += lbl_exit;
+    result += "\n";
+
+    result += lbl_true;
+    result += ":\n\tfld1\n";
+
+    result += lbl_exit;
+    result += ":\n\tfistp dword [";
+
+    result += r.name;
     result += "]\n\n";
 
     return result;
@@ -123,19 +185,29 @@ CodeGenerator::CodeGenerator(Tables tables, std::vector<Token> polish) {
     this->tempsTable = DynamicTable<size_t, Variable>();
 }
 
-std::string CodeGenerator::generate() {
+std::string CodeGenerator::generate(std::string filename) {
     std::vector<Token> operandStack; // smth like buffer to parse to 4s ("четвёрки")
     std::vector<Token> tempVars; // additional variables to store data
+
+    std::ofstream file(filename); // output file
 
     // TODO It's really bad, but I don't have enough time
 
     // TODO When I'll consume what is it, I write smth more definitive.
     size_t idx1 = 0, idx2 = 0;
+    size_t opIdx = 0;
     std::string salt;
 
     // TODO I need to figure out how to write all constants and variables (temp included)
-    std::cout << "[section .text]" << std::endl;
-    std::cout << "\tglobal _start\n\n_start:" << std::endl;
+    file << "; Hello World C compiler\n";
+    file << "; Task 6, by Begichev and Shishkin\n\n";
+    file << "; assemble:              nasm -f elf -l hello.lst hello.asm\n";
+    file << "; assemble with debug:   nasm -g -f elf -l hello.lst hello.asm\n";
+    file << "; link:                  gcc -m32 hello.o -o hello\n";
+    file << "; run:                   hello\n\n";
+    file << "[section .text]\n";
+    file << "\tglobal main\n\nmain:\n";
+
     for (auto token : polish) {
         switch (token.tableID) {
             case TABLE_VARIABLES:
@@ -158,24 +230,33 @@ std::string CodeGenerator::generate() {
 
                 // TODO At the beginning I'll create as many temp variables as possible
                 if (tokenP1.tableID == TABLE_TEMPS) {
-                    minTemp = tokenP1.rowID;                    
-                    idx2 = minTemp; 
+                    size_t typeT = getType(tokenT);
+
+                    if ( ! ((typeT == TYPE_INT || typeT == TYPE_CHAR) && (typeP2 == TYPE_FLOAT))) {
+                        minTemp = tokenP1.rowID;                    
+                        idx2 = minTemp; 
+                    }
                 }
 
                 if (tokenP2.tableID == TABLE_TEMPS && tokenP2.rowID < minTemp) {
-                    minTemp = tokenP2.rowID;
-                    idx2 = minTemp; 
-                    tokenT = tokenP2;
+                    size_t typeT = getType(tokenP2);
+
+                    if ( ! ((typeT == TYPE_INT || typeT == TYPE_CHAR) && (typeP1 == TYPE_FLOAT))) {
+                        minTemp = tokenP2.rowID;
+                        idx2 = minTemp; 
+                        tokenT = tokenP2;
+                    }
                 }
 
                 std::string nameP1 = getNiceName(tokenP1);
                 std::string nameP2 = getNiceName(tokenP2);
                 std::string nameT = getNiceName(tokenT);
 
-                if (minTemp == idx2) {
+                if (minTemp == idx2 && !tempsTable.Contains(idx2)) {
                     salt = getSalt("TEMP_", idx2);
                     std::string tempName = std::to_string(idx2);
                     Variable temp(tempName);
+
 
                     // Init with type
                     if (typeP1 == TYPE_FLOAT || typeP2 == TYPE_FLOAT) {
@@ -192,56 +273,64 @@ std::string CodeGenerator::generate() {
                     tokenT = { TABLE_TEMPS, idx2 }; // Special case to work
 
                     nameT = getNiceName(tokenT);
-                    operandStack.push_back(tokenT);
-                    idx2++; 
                 }
+
+                idx2++; 
 
                 Number p1 = { nameP1, typeP1 };
                 Number p2 = { nameP2, typeP2 };
                 Number t = { nameT, getType(tokenT) };
 
+                operandStack.push_back(tokenT);
 
                 // Depends on operation, I'll generate assembler code
                 switch (token.rowID) {
+
                     case 0: // +
-                        std::cout << "\t; " << nameP1 << " + " << nameP2 << " -> " << nameT << '\n'
+                        file << "\t; " << nameP1 << " + " << nameP2 << " -> " << nameT << '\n'
                                   << addParser(p1, p2, t);
                         break;
 
                     case 1: // -
-                        std::cout << "\t; " << nameP1 << " - " << nameP2 << " -> " << nameT << '\n'
+                        file << "\t; " << nameP1 << " - " << nameP2 << " -> " << nameT << '\n'
                                   << subParser(p1, p2, t);
                         break;
 
                     case 2: // *
-                        std::cout << "\t; " << nameP1 << " * " << nameP2 << " -> " << nameT << '\n'
+                        file << "\t; " << nameP1 << " * " << nameP2 << " -> " << nameT << '\n'
                                   << mulParser(p1, p2, t);
                         break;
 
                     case 3: // =
-                        std::cout << "\t; " << nameP1 << " = " << nameP2 << " -> " << nameP1 << '\n'
+                        file << "\t; " << nameP1 << " = " << nameP2 << " -> " << nameP1 << '\n'
                                   << setParser(p1, p2, t);
                         break;
 
                     case 4: // ==
-                        std::cout << "== " << nameP1 << " " << nameP2 << " " << nameT << std::endl;
+                        file << "\t; " << nameP1 << " == " << nameP2 << " -> " << nameT << '\n'
+                                  << compParser(p1, p2, t, "je", opIdx);
                         break;
 
                     case 5: // !=
-                        std::cout << "!= " << nameP1 << " " << nameP2 << " " << nameT << std::endl;
+                        file << "\t; " << nameP1 << " != " << nameP2 << " -> " << nameT << '\n'
+                                  << compParser(p1, p2, t, "jne", opIdx);
                         break;
 
                     case 6: // <
-                        std::cout << "< " << nameP1 << " " << nameP2 << " " << nameT << std::endl;
+                        file << "\t; " << nameP1 << " < " << nameP2 << " -> " << nameT << '\n'
+                                  << compParser(p1, p2, t, "ja", opIdx);
                         break;
 
                     case 7: // >
-                        std::cout << "> " << nameP1 << " " << nameP2 << " " << nameT << std::endl;
+                        file << "\t; " << nameP1 << " > " << nameP2 << " -> " << nameT << '\n'
+                                  << compParser(p1, p2, t, "jb", opIdx);
                         break;
                 }
 
                 // If I set idx2 = minTemp, then algorithm will not work,
                 // but invalid pointer error will be vanished
+
+                opIdx++;
 
                 break;
         }
@@ -249,9 +338,9 @@ std::string CodeGenerator::generate() {
 
     // DATA SECTION
     // -----------------------------------------------------------
-    std::cout << "\t; Finish is here\n\tmov eax, 1\n\tint 0x80\n\n";
+    file << "\t; Exit program\n\tmov eax, 1\n\tint 0x80\n\n";
 
-    std::cout << "\n[section .data]" << std::endl;
+    file << "\n[section .data]\n";
     std::stack<Token> allNames;
 
     for (auto temp : tempsTable.getKeys()) {
@@ -268,15 +357,15 @@ std::string CodeGenerator::generate() {
 
         switch (type) {
             case TYPE_INT:
-                std::cout << "\t" << getNiceName(token) << " dd 0" << std::endl;
+                file << "\t" << getNiceName(token) << " dd 0" << std::endl;
                 break;
 
             case TYPE_CHAR:
-                std::cout << "\t" << getNiceName(token) << " db 0" << std::endl;
+                file << "\t" << getNiceName(token) << " db 0" << std::endl;
                 break;
 
             case TYPE_FLOAT:
-                std::cout << "\t" << getNiceName(token) << " dq 0.0" << std::endl;
+                file << "\t" << getNiceName(token) << " dq 0.0" << std::endl;
                 break;
         }
 
@@ -294,15 +383,15 @@ std::string CodeGenerator::generate() {
 
         switch (type) {
             case TYPE_INT:
-                std::cout << "\t" << getNiceName(token) << " dd " << tokenStr << std::endl;
+                file << "\t" << getNiceName(token) << " dd " << tokenStr << std::endl;
                 break;
 
             case TYPE_CHAR:
-                std::cout << "\t" << getNiceName(token) << " db " << tokenStr << std::endl;
+                file << "\t" << getNiceName(token) << " db " << tokenStr << std::endl;
                 break;
 
             case TYPE_FLOAT:
-                std::cout << "\t" << getNiceName(token) << " dq " << tokenStr << std::endl;
+                file << "\t" << getNiceName(token) << " dq " << tokenStr << std::endl;
                 break;
         }
 
