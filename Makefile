@@ -1,8 +1,8 @@
 SHELL=/bin/bash
 
 CC = g++
-CFLAGS = -c -g -Wall
-LDFLAGS = -W
+CFLAGS = -c -g -Wall -pg
+LDFLAGS = -W -pg
 
 SRC_DIR = src/
 BIN_DIR = bin/
