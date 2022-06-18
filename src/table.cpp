@@ -171,6 +171,8 @@ std::vector<TKey> DynamicTable<TKey, TValue>::getKeys() {
     return keys;
 }
 
+// TODO idk how to deal with this. The templates are necassery
+// for using classes from another files
 template class StaticTable<std::string>;
 template class DynamicTable<std::string, Type>;
 template class DynamicTable<std::string, Variable>;

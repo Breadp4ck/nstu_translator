@@ -57,7 +57,7 @@ class DynamicTable : Table {
         TValue Get(TKey key);
         TValue ByHash(size_t hash);
         size_t Length();
-        std::vector<TKey> getKeys();
+        std::vector<TKey> getKeys(); // TODO looks unpropriate
         size_t getHash(TKey key);
 };
 

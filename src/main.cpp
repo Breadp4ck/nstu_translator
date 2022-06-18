@@ -72,8 +72,8 @@ int main() {
     // PARSER
     // ------------------------------------------------------------
 
-    auto table = new ParseTable("reference/ParseTable.csv");
-    auto parser = Parser(table, tables, tokenLineIndeces);
+    auto table = ParseTable("reference/ParseTable.csv");
+    auto parser = Parser(&table, tables, tokenLineIndeces);
     parser.parse(tokens);
 
     auto p_errors = parser.getErrors();
@@ -92,12 +92,11 @@ int main() {
     //}
 
 
-
     // CODE GENERATOR
     // ------------------------------------------------------------
 
-    auto gen = new CodeGenerator(tables, polish);
-    gen->generate("hello.asm");
+    auto gen = CodeGenerator(tables, polish);
+    gen.generate("hello.asm");
 
     std::cout << "Done" << std::endl;
 

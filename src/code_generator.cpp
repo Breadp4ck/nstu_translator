@@ -200,7 +200,6 @@ std::string CodeGenerator::generate(std::string filename) {
     size_t opIdx = 0;
     std::string salt;
 
-    // TODO I need to figure out how to write all constants and variables (temp included)
     file << "; Hello World C compiler\n";
     file << "; Task 6, by Begichev and Shishkin\n\n";
     file << "; assemble:              nasm -f elf -l hello.lst hello.asm\n";
@@ -334,9 +333,6 @@ std::string CodeGenerator::generate(std::string filename) {
                                   << compParser(p1, p2, t, "jb", opIdx);
                         break;
                 }
-
-                // If I set idx2 = minTemp, then algorithm will not work,
-                // but invalid pointer error will be vanished
 
                 opIdx++;
 
