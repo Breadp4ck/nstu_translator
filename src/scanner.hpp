@@ -25,7 +25,7 @@ class Scanner {
 public:
     Scanner(Tables tables);
     void scan(std::string filename);
-    void transitionTo(ScannerState *newState);
+    void transitionTo(ScannerState newState);
     void pushToBuffer(char lexeme);
     void pushError(std::string errorMsg);
     int getLine();
@@ -42,7 +42,7 @@ public:
 private:
     int currentLine = 1;
     int currentTokenID = 0;
-    ScannerState *state_;
+    ScannerState state_;
     Tables tables_;
     std::vector<char> buf;
     std::vector<Token> tokens;
